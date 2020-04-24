@@ -84,7 +84,7 @@ class ActivityLogListTable extends \WP_List_Table
 
     public function usort_reorder($a, $b)
     {
-        $orderby = (! empty($_GET['orderby'])) ? $_GET['orderby'] : 'id';
+        $orderby = (! empty($_GET['orderby'])) ? $_GET['orderby'] : 'entry_id';
         $order = (! empty($_GET['order'])) ? $_GET['order'] : 'desc';
         $result = strcmp($a->$orderby, $b->$orderby);
 
