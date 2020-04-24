@@ -1,0 +1,21 @@
+{
+    "name": "cupracode/wp-activity-log",
+    "description": "An WordPress activity log, designed to allow for recording of meta data through custom field adapters such as ACF",
+    "type": "library",
+    "license": "MIT",
+    "version": "0.1.0",
+    "authors": [
+        {
+            "name": "Harry Finn",
+            "email": "harry@harryfinn.co.uk"
+        }
+    ],
+    "require": {
+        "php": ">=7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "CupraCode\\WPActivityLog\\": "src/"
+        }
+    }
+}
