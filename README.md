@@ -6,8 +6,23 @@ The activity log can be further expanded to house other data, sat outside of the
 
 ## Installation
 
-#### TODO
-
 ```
 composer require cupracodes\wp-activity-log
 ```
+
+## Usage
+
+Include the package and add any post types (built-in or custom) that you wish to log ACF field changes for.
+
+```php
+use CupraCode\WPActivityLog\ActivityLogAdmin;
+
+$activity_log_admin = ActivityLogAdmin::getInstance();
+
+// Log ACF field changes for posts, pages and a custom post type named 'photo'
+$activity_log_admin->addPostType('post');
+$activity_log_admin->addPostType('page');
+$activity_log_admin->addPostType('photo');
+```
+
+Click on the 'Activity Log' menu item in the CMS admin menu to view your log.

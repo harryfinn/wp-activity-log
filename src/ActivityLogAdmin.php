@@ -9,12 +9,36 @@ namespace CupraCode\WPActivityLog;
 
 class ActivityLogAdmin
 {
-    public function __construct()
+    private $post_types = [];
+    private static $instance = null;
+
+    private function __construct()
     {
         $this->setupLogDbTable();
 
         add_action('admin_menu', [$this, 'setupAdminPages']);
         add_action('acf/save_post', [$this, 'acfMetaHook'], 5);
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance == null) {
+            self::$instance = new ActivityLogAdmin();
+        }
+
+        return self::$instance;
+    }
+
+    public function addPostType(string $post_type)
+    {
+        if (!in_array($post_type, $this->post_types)) {
+            $this->post_types[] = $post_type;
+        }
+    }
+
+    public function getPostTypes()
+    {
+        return $this->post_types;
     }
 
     public function setupAdminPages()
@@ -70,6 +94,10 @@ class ActivityLogAdmin
     public function acfMetaHook($post_id)
     {
         if (empty($_POST['acf'])) {
+            return;
+        }
+
+        if (!in_array(get_post_type($post_id), $this->post_types)) {
             return;
         }
 
