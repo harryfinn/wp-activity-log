@@ -14,18 +14,28 @@ if (!class_exists('WP_List_Table')) {
 class ActivityLogListTable extends \WP_List_Table
 {
     private $pagination_per_page;
+    private $entry_id_column_override = '';
+    private $entry_id_meta_key_override = '';
 
-    public function __construct($pagination_per_page = 20)
+    public function __construct($pagination_per_page = 20, $entry_id_override = [])
     {
         parent::__construct();
 
         $this->pagination_per_page = $pagination_per_page;
+
+        if (!empty($entry_id_override)) {
+            $this->entry_id_column_override = $entry_id_override['column_name'];
+            $this->entry_id_meta_key_override = $entry_id_override['column_meta_key'];
+        }
     }
 
     public function get_columns()
     {
+        $entry_id_column_name = !empty($this->entry_id_column_override) ?
+            $this->entry_id_column_override :
+            'Entry #';
         $columns = [
-            'entry_id' => 'Entry #',
+            'entry_id' => $entry_id_column_name,
             'entry_type' => 'Entry Type',
             'entry_object' => 'Entry Object',
             'activity' => 'Activity',
@@ -40,6 +50,11 @@ class ActivityLogListTable extends \WP_List_Table
     {
         switch ($column_name) {
             case 'entry_id':
+                if (!empty($this->entry_id_meta_key_override)) {
+                    return get_post_meta($item->entry_object, $this->entry_id_meta_key_override, true);
+                }
+
+                return $item->$column_name;
             case 'entry_type':
             case 'created_at':
                 return $item->$column_name;
@@ -55,7 +70,12 @@ class ActivityLogListTable extends \WP_List_Table
             case 'activity':
                 $activity = json_decode($item->$column_name);
                 $activity_output = "Data for: <strong>{$activity->field_name}</strong><br>";
-                $activity_output .= "Changed from: <strong>{$activity->previous_value}</strong>, to: <strong>{$activity->updated_value}</strong>";
+
+                if ($activity->field_name === 'Featured Image') {
+                    $activity_output .= "<div class='activity-images'><img src='{$activity->previous_value}' /><img src='{$activity->updated_value}' /></div>";
+                } else {
+                    $activity_output .= "Changed from: <strong>{$activity->previous_value}</strong>, to: <strong>{$activity->updated_value}</strong>";
+                }
 
                 return $activity_output;
             case 'user':
@@ -76,7 +96,6 @@ class ActivityLogListTable extends \WP_List_Table
         $sortable_columns = [
             'created_at'  => ['created_at', false],
             'user' => ['user_id', false],
-            'entry_object' => ['entry_object', false]
         ];
 
         return $sortable_columns;
@@ -84,11 +103,10 @@ class ActivityLogListTable extends \WP_List_Table
 
     public function usort_reorder($a, $b)
     {
-        $orderby = (! empty($_GET['orderby'])) ? $_GET['orderby'] : 'entry_id';
-        $order = (! empty($_GET['order'])) ? $_GET['order'] : 'desc';
-        $result = strcmp($a->$orderby, $b->$orderby);
+        $orderby = (!empty($_GET['orderby'])) ? $_GET['orderby'] : 'entry_id';
+        $order = (!empty($_GET['order'])) ? $_GET['order'] : 'desc';
 
-        return ($order === 'asc') ? $result : -$result;
+        return $order === 'asc' ? $a->$orderby <=> $b->$orderby : $b->$orderby <=> $a->$orderby;
     }
 
     public function prepare_items()

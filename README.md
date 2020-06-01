@@ -26,3 +26,22 @@ $activity_log_admin->addPostType('photo');
 ```
 
 Click on the 'Activity Log' menu item in the CMS admin menu to view your log.
+
+## Customising
+
+The `ActivityLogAdmin` class allows you to change the number of entries per page and also the first column, which defaults to the `entry_id` value should you wish to use a unique identifier of your own, perhaps a custom field from your CPT.
+
+To change the default entries per page, use the following example as a guide, here we change the value to 25 entries per page:
+
+```php
+$activity_log_admin->setPaginationPerPage(25)
+```
+
+To change the first column to a custom field, use the following example as a guide, here we change the column name to Ref. Num and specify the custom meta field key we want to fetch and return the value for:
+
+```php
+$activity_log_admin->setEntryIdOverride([
+    'column_name' => 'Ref. Num',
+    'column_meta_key' => 'reference_no'
+]);
+```

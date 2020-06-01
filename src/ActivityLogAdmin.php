@@ -11,12 +11,15 @@ class ActivityLogAdmin
 {
     private $post_types = [];
     private static $instance = null;
+    private $pagination_per_page = 20;
+    private $entry_id_override = [];
 
     private function __construct()
     {
         $this->setupLogDbTable();
 
         add_action('admin_menu', [$this, 'setupAdminPages']);
+        add_filter('wp_insert_post_data', [$this, 'featuredImageHook'], 10, 2);
         add_action('acf/save_post', [$this, 'acfMetaHook'], 5);
     }
 
@@ -41,6 +44,16 @@ class ActivityLogAdmin
         return $this->post_types;
     }
 
+    public function setPaginationPerPage($pagination_per_page)
+    {
+        $this->pagination_per_page = $pagination_per_page;
+    }
+
+    public function setEntryIdOverride($override_array)
+    {
+        $this->entry_id_override = $override_array;
+    }
+
     public function setupAdminPages()
     {
         add_menu_page(
@@ -56,7 +69,7 @@ class ActivityLogAdmin
 
     public function renderTopLevelAdminPage()
     {
-        $activity_log_table = new ActivityLogListTable();
+        $activity_log_table = new ActivityLogListTable($this->pagination_per_page, $this->entry_id_override);
         $activity_log_table->prepare_items(); ?>
         <div class="wrap">
             <h1>WP Activity Log</h1>
@@ -80,6 +93,22 @@ class ActivityLogAdmin
             .wp-list-table .column-activity {
                 width: 30%;
             }
+
+            .wp-list-table .activity-images {
+                align-items: center;
+                display: flex;
+                justify-content: space-between;
+                padding: 10px 0;
+            }
+
+            .wp-list-table .activity-images img:first-child {
+                opacity: 0.65;
+                width: 40%;
+            }
+
+            .wp-list-table .activity-images img:last-child {
+                width: 50%;
+            }
         </style>
 
         <?php if (empty($activity_log_table->items)) : ?>
@@ -91,6 +120,24 @@ class ActivityLogAdmin
         endif;
     }
 
+    public function featuredImageHook($data, $postarr)
+    {
+        $post_id = $postarr['ID'];
+        $post_type = ucfirst(get_post_type($post_id));
+        $user_id = !empty($user = wp_get_current_user()) ? $user->ID : 0;
+        $current_thumbnail = get_post_thumbnail_id($post_id);
+        $new_thumbnail = (int) $postarr['_thumbnail_id'];
+
+        if ($current_thumbnail !== $new_thumbnail) {
+            $activity_json = json_encode([
+                'field_name' => 'Featured Image',
+                'previous_value' => wp_get_attachment_image_src($current_thumbnail)[0],
+                'updated_value' => wp_get_attachment_image_src($new_thumbnail)[0]
+            ]);
+            ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
+        }
+    }
+
     public function acfMetaHook($post_id)
     {
         if (empty($_POST['acf'])) {
@@ -100,6 +147,9 @@ class ActivityLogAdmin
         if (!in_array(get_post_type($post_id), $this->post_types)) {
             return;
         }
+
+        $post_type = ucfirst(get_post_type($post_id));
+        $user_id = !empty($user = wp_get_current_user()) ? $user->ID : 0;
 
         foreach ($_POST['acf'] as $acf_key => $new_value) {
             if (($acf_object = get_field_object($acf_key, $post_id)) !== false) {
@@ -114,11 +164,31 @@ class ActivityLogAdmin
                     'previous_value' => $previous_value,
                     'updated_value' => $new_value
                 ]);
-                $post_type = ucfirst(get_post_type($post_id));
-                $user_id = !empty($user = wp_get_current_user()) ? $user->ID : 0;
 
                 ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
             }
+        }
+
+        $current_post_title = get_the_title($post_id);
+
+        if ($current_post_title !== $_POST['post_title']) {
+            $activity_json = json_encode([
+                'field_name' => 'Title',
+                'previous_value' => $current_post_title,
+                'updated_value' => $_POST['post_title']
+            ]);
+            ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
+        }
+
+        $current_post_content = get_post_field('post_content', $post_id);
+
+        if ($current_post_content !== $_POST['post_content']) {
+            $activity_json = json_encode([
+                'field_name' => 'Content',
+                'previous_value' => $current_post_content,
+                'updated_value' => $_POST['post_content']
+            ]);
+            ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
         }
     }
 

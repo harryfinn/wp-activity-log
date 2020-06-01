@@ -3,7 +3,7 @@
     "description": "An WordPress activity log, designed to allow for recording of meta data through custom field adapters such as ACF",
     "type": "library",
     "license": "MIT",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "authors": [
         {
             "name": "Harry Finn",
