@@ -123,6 +123,15 @@ class ActivityLogAdmin
     public function featuredImageHook($data, $postarr)
     {
         $post_id = $postarr['ID'];
+
+        if (!in_array(get_post_type($post_id), $this->post_types)) {
+            return $data;
+        }
+
+        if (empty($post_id)) {
+            return $data;
+        }
+
         $post_type = ucfirst(get_post_type($post_id));
         $user_id = !empty($user = wp_get_current_user()) ? $user->ID : 0;
         $current_thumbnail = get_post_thumbnail_id($post_id);
@@ -136,6 +145,8 @@ class ActivityLogAdmin
             ]);
             ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
         }
+
+        return $data;
     }
 
     public function acfMetaHook($post_id)
