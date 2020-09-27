@@ -170,8 +170,9 @@ class ActivityLogAdmin
 
 
         $current_post_title = get_the_title($post_id);
+        $new_post_title = str_replace("'", '&#8217;', stripslashes($postarr['post_title']));
 
-        if ($current_post_title !== stripslashes($postarr['post_title'])) {
+        if ($current_post_title !== $new_post_title) {
             $activity_json = json_encode([
                 'field_name' => 'Title',
                 'previous_value' => $current_post_title,
@@ -180,13 +181,15 @@ class ActivityLogAdmin
             ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
         }
 
-        $current_post_content = get_post_field('post_content', $post_id);
 
-        if ($current_post_content !== stripslashes($postarr['post_content'])) {
+        $current_post_content = get_post_field('post_content', $post_id);
+        $new_post_content = str_replace("'", '&#8217;', stripslashes($postarr['post_content']));
+
+        if ($current_post_content !== $new_post_content) {
             $activity_json = json_encode([
                 'field_name' => 'Content',
                 'previous_value' => $current_post_content,
-                'updated_value' => stripslashes($postarr['post_content'])
+                'updated_value' => stripslashes($new_post_content)
             ]);
             ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
         }
@@ -335,14 +338,16 @@ class ActivityLogAdmin
                         }
                     }
                 } else {
-                    if ($previous_value == $new_value) {
+                    $new_formatted_value = str_replace("'", '&#8217;', stripslashes($new_value));
+
+                    if (trim(strip_tags($previous_value)) === $new_formatted_value) {
                         continue;
                     }
 
                     $activity_json = json_encode([
                         'field_name' => $acf_object['label'],
                         'previous_value' => $previous_value,
-                        'updated_value' => $new_value
+                        'updated_value' => stripslashes($new_value)
                     ]);
 
                     ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
