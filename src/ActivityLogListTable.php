@@ -72,9 +72,22 @@ class ActivityLogListTable extends \WP_List_Table
                 $activity_output = "Data for: <strong>{$activity->field_name}</strong><br>";
 
                 if ($activity->field_name === 'Featured Image') {
-                    $activity_output .= "<div class='activity-images'><img src='{$activity->previous_value}' /><img src='{$activity->updated_value}' /></div>";
+                    $activity_output .= !empty($activity->previous_value) ?
+                        "<div class='activity-images'><img src='{$activity->previous_value}' /><img src='{$activity->updated_value}' /></div>" :
+                        "<div class='activity-images'><img src='{$activity->updated_value}' /></div>";
                 } else {
-                    $activity_output .= "Changed from: <strong>{$activity->previous_value}</strong>, to: <strong>{$activity->updated_value}</strong>";
+                    if ($activity->field_name === 'Content') {
+                        $activity_output .= '<a data-behaviour="content-modal-trigger" href="#">View content changes</a>';
+                        $activity_output .= '<div class="content-modal" data-behaviour="content-modal"><a class="content-modal__close" data-behaviour="close-content-modal" href="#">X</a><div class="content-modal__wrapper">';
+                        $activity_output .= empty($activity->previous_value) ?
+                            "<div class='content-modal__col'><h4>New value added:</h4><p>{$activity->updated_value}</p></div>" :
+                            "<div class='content-modal__col'><h4>Changed from:</h4><p>{$activity->previous_value}</p></div><div class='content-modal__col'><h4>Changed to:</h4><p>{$activity->updated_value}</p></div>";
+                        $activity_output .= '</div></div>';
+                    } else {
+                        $activity_output .= empty($activity->previous_value) ?
+                            "New value added: <strong>{$activity->updated_value}</strong>" :
+                            "Changed from: <strong>{$activity->previous_value}</strong>, to: <strong>{$activity->updated_value}</strong>";
+                    }
                 }
 
                 return $activity_output;
