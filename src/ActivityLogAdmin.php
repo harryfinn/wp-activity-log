@@ -171,11 +171,11 @@ class ActivityLogAdmin
 
         $current_post_title = get_the_title($post_id);
 
-        if ($current_post_title !== $postarr['post_title']) {
+        if ($current_post_title !== stripslashes($postarr['post_title'])) {
             $activity_json = json_encode([
                 'field_name' => 'Title',
                 'previous_value' => $current_post_title,
-                'updated_value' => $postarr['post_title']
+                'updated_value' => stripslashes($postarr['post_title'])
             ]);
             ActivityLog::addEntry($post_type, $post_id, $user_id, $activity_json);
         }
